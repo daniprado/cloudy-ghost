@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 CURR_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${CURR_PATH}/.envrc
 
@@ -7,13 +9,13 @@ AZ_OUT="${CURR_PATH}/az_out"
 mkdir -p ${AZ_OUT}
 
 # Storage Account "wait" workaround: https://github.com/Azure/azure-cli/issues/1528#issuecomment-720750332
-docker run -rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
+docker run --rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
   az login --service-principal --tenant ${ARM_TENANT_ID} --username ${ARM_CLIENT_ID} \
       --password ${ARM_CLIENT_SECRET} && \
     echo 'Azure logged in.' && \
   az account set --subscription ${ARM_SUBSCRIPTION_ID} && \
     echo 'Selected subscription.' && \
-  az group create --location ${PRIMARY_LOCATION} --name ${CICD_RESOURCE_GROUP} && \
+  az group create --location ${CICD_LOCATION} --name ${CICD_RESOURCE_GROUP} && \
     echo 'Resource Group created.' && \
   az storage account create --resource-group ${CICD_RESOURCE_GROUP} --name ${CICD_STORAGE_ACCOUNT} \
       --sku Standard_LRS --access-tier Hot --kind BlobStorage --encryption-services blob \
@@ -28,15 +30,24 @@ docker run -rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
   az storage container create --name ${CICD_TFSTATE_BLOB} --account-name ${CICD_STORAGE_ACCOUNT} \
       --auth-mode login && \
     echo 'Container created.' && \
+  az storage account keys list --resource-group ${CICD_RESOURCE_GROUP} \
+      --account-name ${CICD_STORAGE_ACCOUNT} --query '[0].value' -o tsv > /out/sto_key && \
   az acr create --name ${CICD_CONTAINER_REGISTRY} --resource-group ${CICD_RESOURCE_GROUP} \
       --sku Basic --admin-enabled true && \
     echo 'Container registry created.' && \
-  az acr credential show --name ${CICD_CONTAINER_REGISTRY} --query username -otsv \
+  az acr credential show --name ${CICD_CONTAINER_REGISTRY} --query username -o tsv \
       > /out/acr_usr && \
-  az acr credential show --name ${CICD_CONTAINER_REGISTRY} --query passwords[0].value -otsv \
+  az acr credential show --name ${CICD_CONTAINER_REGISTRY} --query passwords[0].value -o tsv \
       > /out/acr_pwd && \
   az logout && \
     echo 'Azure logged out.'"
+
+echo "export ARM_ACCESS_KEY=$(cat ${AZ_OUT}/sto_key)" >> ${CURR_PATH}/.envrc
+echo "Added Storage account access key to local vars."
+
+envsubst < ${CURR_PATH}/main.tf > ${CURR_PATH}/main_new.tf
+mv ${CURR_PATH}/main_new.tf ${CURR_PATH}/main.tf
+echo "Updated backend parameters in Terraform source."
 
 ACR_USR="$(cat ${AZ_OUT}/acr_usr)"
 ACR_PWD="$(cat ${AZ_OUT}/acr_pwd)"
