@@ -27,8 +27,8 @@ module "cloudy-ghost" {
   source = "./modules/ghost-app"
 
   app_name = "$APP_NAME"
-  location = "$PRIMART_LOCATION"
-  loc      = "$PRIMART_LOCATION_ABV"
+  location = "$PRIMARY_LOCATION"
+  loc      = "$PRIMARY_LOCATION_ABV"
 
   acr             = "${data.azurerm_container_registry.cicd}"
   initial_version = "$GHOST_VERSION"
