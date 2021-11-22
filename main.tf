@@ -7,10 +7,10 @@ terraform {
     }
   }
   backend "azurerm" {
-      resource_group_name  = "rg-ds-weu-cicd04"
-      storage_account_name = "stodsweucicd04"
-      container_name       = "tfstate"
-      key                  = "cloudy-ghost.tfstate"
+      resource_group_name  = "$CICD_RESOURCE_GROUP"
+      storage_account_name = "$CICD_STORAGE_ACCOUNT"
+      container_name       = "$CICD_TFSTATE_BLOB"
+      key                  = "$APP_NAME.tfstate"
   }
 }
 
@@ -19,18 +19,18 @@ provider "azurerm" {
 }
 
 data "azurerm_container_registry" "cicd" {
-  name                 = "crdsweucicd04"
-  resource_group_name  = "rg-ds-weu-cicd04"
+  name                 = "$CICD_CONTAINER_REGISTRY"
+  resource_group_name  = "$CICD_RESOURCE_GROUP"
 }
 
 module "cloudy-ghost" {
   source = "./modules/ghost-app"
 
-  app_name = "ghost"
-  location = "westeurope"
-  loc      = "weu"
+  app_name = "$APP_NAME"
+  location = "$PRIMART_LOCATION"
+  loc      = "$PRIMART_LOCATION_ABV"
 
   acr             = "${data.azurerm_container_registry.cicd}"
-  initial_version = "4.22.3"
+  initial_version = "$GHOST_VERSION"
 
 }

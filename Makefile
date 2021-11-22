@@ -25,5 +25,5 @@ tf-destroy: ## Destroy all resources created by the terraform file in this repo.
 	docker run --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) destroy -auto-approve
 
 tf-sh: ## terraform console
-	docker run --rm -it -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) console
+	docker run -it --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) --entrypoint "" hashicorp/terraform:$(TERRAFORM_VERSION) sh
 
