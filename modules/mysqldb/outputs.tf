@@ -1,37 +1,47 @@
-output "type" {
-  value = "mysql"
+output "server_id" {
+  value = "${azurerm_mysql_server.db.id}"
 }
 
-output "fqdn" {
+output "server_name" {
+  value = "${azurerm_mysql_server.db.id}"
+}
+
+output "server_fqdn" {
   value = "${azurerm_mysql_server.db.fqdn}"
 }
 
-output "port" {
+output "server_type" {
+  value = "mysql"
+}
+
+output "server_port" {
   value = "${local.port}"
 }
 
-output "ssl" {
+output "server_ssl" {
   value = "${local.ssl}"
 }
 
-output "dbname" {
+output "database_name" {
   value = "${azurerm_mysql_server.db.name}"
 }
 
-output "dbaname" {
+output "dba_name" {
   value = "${var.dba_name}@${azurerm_mysql_server.db.name}"
 }
 
-output "dbapwd" {
+output "dba_password" {
   value     = "${random_password.dbapwd.result}"
   sensitive = true
 }
 
-output "dbuname" {
-  value = "${mysql_user.dbu.user}@${azurerm_mysql_server.db.name}"
+# FIXME A specific user should be created
+output "user_name" {
+  value = "${var.dba_name}@${azurerm_mysql_server.db.name}"
 }
 
-output "dbupwd" {
-  value     = "${random_password.dbupwd.result}"
+# FIXME A specific user should be created
+output "user_password" {
+  value     = "${random_password.dbapwd.result}"
   sensitive = true
 }

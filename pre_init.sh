@@ -45,8 +45,7 @@ docker run --rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
 echo "export ARM_ACCESS_KEY=$(cat ${AZ_OUT}/sto_key)" >> ${CURR_PATH}/.envrc
 echo "Added Storage account access key to local vars."
 
-envsubst < ${CURR_PATH}/main.tf > ${CURR_PATH}/main_new.tf
-mv ${CURR_PATH}/main_new.tf ${CURR_PATH}/main.tf
+envsubst < ${CURR_PATH}/terraform.tfvars.orig > ${CURR_PATH}/terraform.tfvars
 echo "Updated backend parameters in Terraform source."
 
 ACR_USR="$(cat ${AZ_OUT}/acr_usr)"

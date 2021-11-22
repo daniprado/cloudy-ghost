@@ -7,10 +7,10 @@ terraform {
     }
   }
   backend "azurerm" {
-      resource_group_name  = "$CICD_RESOURCE_GROUP"
-      storage_account_name = "$CICD_STORAGE_ACCOUNT"
-      container_name       = "$CICD_TFSTATE_BLOB"
-      key                  = "$APP_NAME.tfstate"
+      resource_group_name  = "${var.cicd_resource_group}"
+      storage_account_name = "${var.cicd_storage_account}"
+      container_name       = "${var.cicd_tfstate_blob}"
+      key                  = "${var.app_name}.tfstate"
   }
 }
 
@@ -19,18 +19,19 @@ provider "azurerm" {
 }
 
 data "azurerm_container_registry" "cicd" {
-  name                 = "$CICD_CONTAINER_REGISTRY"
-  resource_group_name  = "$CICD_RESOURCE_GROUP"
+  name                = "${var.cicd_container_registry}"
+  resource_group_name = "${var.cicd_resource_group}"
 }
 
 module "cloudy-ghost" {
-  source = "./modules/ghost-app"
+  source          = "./modules/ghost-app"
 
-  app_name = "$APP_NAME"
-  location = "$PRIMARY_LOCATION"
-  loc      = "$PRIMARY_LOCATION_ABV"
+  app_name        = "${var.app_name}"
+  location        = "${var.primary_location}"
+  loc             = "${var.primary_location_abv}"
+  org             = "${var.organization_abv}"
 
   acr             = "${data.azurerm_container_registry.cicd}"
-  initial_version = "$GHOST_VERSION"
+  initial_version = "${var.ghost_version}"
 
 }

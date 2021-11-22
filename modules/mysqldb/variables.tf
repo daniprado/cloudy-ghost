@@ -27,7 +27,7 @@ variable "db_name" {
 # -----------------------------------------------------------------------------------------------
 
 variable "dba_name" {
-  description = "Username for the administrator."
+  description = "User for the administrator."
   type        = string
   default     = "dsadmin"
 }

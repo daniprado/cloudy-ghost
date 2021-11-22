@@ -17,6 +17,11 @@ variable "loc" {
   type        = string
 }
 
+variable "org" {
+  description = "Short version of the organization name."
+  type        = string
+}
+
 variable "acr" {
   description = "Container registry to get the initial image from."
   type        = any
@@ -44,7 +49,7 @@ variable "initial_version" {
 
 locals {
   env           = var.environment_name != "" ? "-${var.environment_name}" : ""
-  shared_name   = "ds-${var.loc}${local.env}-${var.app_name}"
+  shared_name   = "${var.org}-${var.loc}${local.env}-${var.app_name}"
 
   version       = var.initial_version != "" ? ":${var.initial_version}" : ""
   initial_image = "${var.acr.login_server}/${var.app_name}${local.version}"
