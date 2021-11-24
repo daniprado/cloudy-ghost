@@ -30,6 +30,18 @@ module "persistence" {
 }
 
 # -----------------------------------------------------------------------------------------------
+# Persistence (Storage)
+# -----------------------------------------------------------------------------------------------
+# Add this to the docker image first: https://github.com/hvetter-de/ghost-azurestorage
+# resource "azurerm_storage_account" "persistence" {
+#   name                     = "sto${var.org}${var.loc}${local.env}${var.app_name}"
+#   location                 = "${azurerm_resource_group.ghost.location}"
+#   resource_group_name      = "${azurerm_resource_group.ghost.name}"
+#   account_tier             = "Standard"
+#   account_replication_type = "GRS"
+# }
+
+# -----------------------------------------------------------------------------------------------
 # App Service Plan
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_app_service_plan" "ghost" {
@@ -156,7 +168,6 @@ resource "azurerm_key_vault_access_policy" "appserv" {
 # -----------------------------------------------------------------------------------------------
 # Keyvault secrets
 # -----------------------------------------------------------------------------------------------
-
 resource "azurerm_key_vault_secret" "dbapwd" {
   key_vault_id = "${azurerm_key_vault.ghost.id}"
 
@@ -199,6 +210,9 @@ resource "azurerm_log_analytics_workspace" "ghost" {
   retention_in_days   = 30
 }
 
+# -----------------------------------------------------------------------------------------------
+# Diagnostic settings
+# -----------------------------------------------------------------------------------------------
 resource "azurerm_monitor_diagnostic_setting" "persistence" {
   name                           = "persistence_metrics"
   target_resource_id             = module.persistence.server_id
@@ -227,6 +241,75 @@ resource "azurerm_monitor_diagnostic_setting" "servplan" {
 
     retention_policy {
       enabled = false
+    }
+  }
+}
+
+# -----------------------------------------------------------------------------------------------
+# Autoscale settings
+# -----------------------------------------------------------------------------------------------
+resource "azurerm_monitor_autoscale_setting" "servplan" {
+  name                = "http_queue_length"
+  location            = "${azurerm_resource_group.ghost.location}"
+  resource_group_name = "${azurerm_resource_group.ghost.name}"
+  target_resource_id  = "${azurerm_app_service_plan.ghost.id}"
+
+  profile {
+    name = "defaultProfile"
+
+    capacity {
+      default = 1
+      minimum = 1
+      maximum = 10
+    }
+
+    rule {
+      metric_trigger {
+        metric_name              = "HttpQueueLength"
+        metric_resource_id       = "${azurerm_app_service_plan.ghost.id}"
+        time_grain               = "PT1M"
+        statistic                = "Average"
+        time_window              = "PT5M"
+        time_aggregation         = "Average"
+        operator                 = "GreaterThan"
+        threshold                = 50
+        divide_by_instance_count = true
+      }
+
+      scale_action {
+        direction = "Increase"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT1M"
+      }
+    }
+
+    rule {
+      metric_trigger {
+        metric_name              = "HttpQueueLength"
+        metric_resource_id       = "${azurerm_app_service_plan.ghost.id}"
+        time_grain               = "PT1M"
+        statistic                = "Average"
+        time_window              = "PT5M"
+        time_aggregation         = "Average"
+        operator                 = "LessThan"
+        threshold                = 5
+        divide_by_instance_count = true
+      }
+
+      scale_action {
+        direction = "Decrease"
+        type      = "ChangeCount"
+        value     = "1"
+        cooldown  = "PT1M"
+      }
+    }
+  }
+
+  notification {
+    email {
+      send_to_subscription_administrator    = true
+      send_to_subscription_co_administrator = true
     }
   }
 }
