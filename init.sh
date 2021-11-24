@@ -2,7 +2,6 @@
 
 set -e
 
-
 CURR_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 ENVIRONMENT_FILE="${CURR_PATH}/.envrc"
 source ${ENVIRONMENT_FILE}

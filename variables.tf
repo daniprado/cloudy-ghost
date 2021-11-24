@@ -30,7 +30,17 @@ variable "primary_location" {
 }
 
 variable "primary_location_abv" {
-  description = "Short version of the location name. It is used in component's naming convention."
+  description = "Short version of the primary location name. It is used in component's naming convention."
+  type        = string
+}
+
+variable "secondary_location" {
+  description = "Name of the secondary location (Azure) to be used."
+  type        = string
+}
+
+variable "secondary_location_abv" {
+  description = "Short version of the secondary location name. It is used in component's naming convention."
   type        = string
 }
 
@@ -43,3 +53,16 @@ variable "cicd_container_registry" {
   description = "Name of the ACR component to be used recovering Ghost docker image. Must be inside CICD RG."
   type        = string
 }
+
+# -----------------------------------------------------------------------------------------------
+# LOCAL VARIABLES
+# -----------------------------------------------------------------------------------------------
+locals {
+  primary_shared_name   = "${var.organization_abv}-${var.primary_location_abv}-${var.app_name}"
+  secondary_shared_name = "${var.organization_abv}-${var.secondary_location_abv}-${var.app_name}"
+  core_shared_name      = "${var.organization_abv}-global-${var.app_name}"
+
+  core_rg_name          = "rg-${var.organization_abv}-global-${var.app_name}"
+  database_server_name  = "msql-${local.primary_shared_name}"
+}
+

@@ -9,6 +9,8 @@ app_name                = "${APP_NAME}"
 organization_abv        = "${ORGANIZATION_ABV}"
 primary_location        = "${PRIMARY_LOCATION}"
 primary_location_abv    = "${PRIMARY_LOCATION_ABV}"
+secondary_location      = "${SECONDARY_LOCATION}"
+secondary_location_abv  = "${SECONDARY_LOCATION_ABV}"
 
 cicd_resource_group     = "${CICD_RESOURCE_GROUP}"
 cicd_container_registry = "${CICD_CONTAINER_REGISTRY}"

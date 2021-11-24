@@ -13,39 +13,15 @@ data "azurerm_client_config" "current" {}
 # Resource group
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_resource_group" "ghost" {
-  name     = "rg-${local.shared_name}"
+  name     = "rg-${var.shared_name}"
   location = "${var.location}"
 }
-
-# -----------------------------------------------------------------------------------------------
-# Persistence (Database)
-# -----------------------------------------------------------------------------------------------
-module "persistence" {
-  source      = "../mysqldb"
-
-  location    = "${azurerm_resource_group.ghost.location}"
-  rg_name     = "${azurerm_resource_group.ghost.name}"
-  server_name = "msql-${local.shared_name}"
-  db_name     = "${var.app_name}"
-}
-
-# -----------------------------------------------------------------------------------------------
-# Persistence (Storage)
-# -----------------------------------------------------------------------------------------------
-# Add this to the docker image first: https://github.com/hvetter-de/ghost-azurestorage
-# resource "azurerm_storage_account" "persistence" {
-#   name                     = "sto${var.org}${var.loc}${local.env}${var.app_name}"
-#   location                 = "${azurerm_resource_group.ghost.location}"
-#   resource_group_name      = "${azurerm_resource_group.ghost.name}"
-#   account_tier             = "Standard"
-#   account_replication_type = "GRS"
-# }
 
 # -----------------------------------------------------------------------------------------------
 # App Service Plan
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_app_service_plan" "ghost" {
-  name                = "asp-${local.shared_name}"
+  name                = "asp-${var.shared_name}"
   location            = "${azurerm_resource_group.ghost.location}"
   resource_group_name = "${azurerm_resource_group.ghost.name}"
 
@@ -61,8 +37,18 @@ resource "azurerm_app_service_plan" "ghost" {
 # -----------------------------------------------------------------------------------------------
 # App Service
 # -----------------------------------------------------------------------------------------------
+locals {
+  app_component_name = "as-${var.shared_name}"
+
+  db_user = "${var.key_vault.vault_uri}secrets/${var.db.user_name.name}/${var.db.user_name.version}"
+  db_pwd = "${var.key_vault.vault_uri}secrets/${var.db.user_password.name}/${var.db.user_password.version}"
+
+  version       = var.app_version != "" ? ":${var.app_version}" : ""
+  app_image = "${var.container_registry.login_server}/${var.app_name}${local.version}"
+}
+
 resource "azurerm_app_service" "ghost" {
-  name                = "as-${local.shared_name}"
+  name                = "${local.app_component_name}"
   location            = "${azurerm_resource_group.ghost.location}"
   resource_group_name = "${azurerm_resource_group.ghost.name}"
   app_service_plan_id = "${azurerm_app_service_plan.ghost.id}"
@@ -77,8 +63,7 @@ resource "azurerm_app_service" "ghost" {
     acr_use_managed_identity_credentials = true
     always_on                            = true
     ftps_state                           = "Disabled"
-    health_check_path                    = "/about/"
-    linux_fx_version                     = "DOCKER|${local.initial_image}"
+    linux_fx_version                     = "DOCKER|${local.app_image}"
   }
 
   # Debuging purposes
@@ -93,14 +78,14 @@ resource "azurerm_app_service" "ghost" {
 
   app_settings = {
     # Ghost params
-    "database__client"                                = "${module.persistence.server_type}"
-    "database__connection__host"                      = "${module.persistence.server_fqdn}"
-    "database__connection__database"                  = "${module.persistence.database_name}"
-    "database__connection__user"                      = "${module.persistence.user_name}"
-    "database__connection__password"                  = "@Microsoft.KeyVault(SecretUri=${local.dbconnpwd})"
-    "database__connection__port"                      = "${module.persistence.server_port}"
-    "database__connection__ssl"                       = "${module.persistence.server_ssl}"
-    "url"                                             = "https://as-${local.shared_name}.azurewebsites.net"
+    "database__client"                                = "${var.db.server_type}"
+    "database__connection__host"                      = "${var.db.server_fqdn}"
+    "database__connection__database"                  = "${var.db.database_name}"
+    "database__connection__user"                      = "@Microsoft.KeyVault(SecretUri=${local.db_user})"
+    "database__connection__password"                  = "@Microsoft.KeyVault(SecretUri=${local.db_pwd})"
+    "database__connection__port"                      = "${var.db.server_port}"
+    "database__connection__ssl"                       = "${var.db.server_ssl}"
+    "url"                                             = "https://${local.app_component_name}.azurewebsites.net"
 
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE"             = "false"
 
@@ -120,119 +105,45 @@ resource "azurerm_app_service" "ghost" {
   }
 }
 
-locals {
-  dbconnpwd = "${azurerm_key_vault.ghost.vault_uri}secrets/${azurerm_key_vault_secret.dbupwd.name}/${azurerm_key_vault_secret.dbupwd.version}"
-}
-
 resource "azurerm_role_assignment" "appserv" {
   principal_id         = "${azurerm_app_service.ghost.identity.0.principal_id}"
-  scope                = "${var.acr.id}"
+  scope                = "${var.container_registry.id}"
   role_definition_name = "acrpull"
 }
 
 # -----------------------------------------------------------------------------------------------
-# Keyvault
+# KeyVault access policies
 # -----------------------------------------------------------------------------------------------
-resource "azurerm_key_vault" "ghost" {
-  name                 = "kv-${local.shared_name}"
-  location             = "${azurerm_resource_group.ghost.location}"
-  resource_group_name  = "${azurerm_resource_group.ghost.name}"
-  tenant_id            = "${data.azurerm_client_config.current.tenant_id}"
-
-  sku_name             = "standard"
-}
-
-resource "azurerm_key_vault_access_policy" "automation" {
-  key_vault_id       = "${azurerm_key_vault.ghost.id}"
-  tenant_id          = "${data.azurerm_client_config.current.tenant_id}"
-
-  object_id          = "${data.azurerm_client_config.current.object_id}"
-
-  secret_permissions = [
-    "Get",
-    "Set",
-  ]
-}
-
 resource "azurerm_key_vault_access_policy" "appserv" {
-  key_vault_id       = "${azurerm_key_vault.ghost.id}"
+  key_vault_id       = "${var.key_vault.id}"
   tenant_id          = "${data.azurerm_client_config.current.tenant_id}"
 
   object_id          = "${azurerm_app_service.ghost.identity.0.principal_id}"
 
-  secret_permissions = [ 
+  secret_permissions = [
     "Get",
   ]
-}
-
-# -----------------------------------------------------------------------------------------------
-# Keyvault secrets
-# -----------------------------------------------------------------------------------------------
-resource "azurerm_key_vault_secret" "dbapwd" {
-  key_vault_id = "${azurerm_key_vault.ghost.id}"
-
-  name         = "mysql-ghost-dba-pwd"
-  value        = "${module.persistence.dba_password}"
-
-  # Adding secrets won't work without "automation" policy
-  depends_on   = [azurerm_key_vault_access_policy.automation]
-}
-
-resource "azurerm_key_vault_secret" "dbupwd" {
-  key_vault_id = "${azurerm_key_vault.ghost.id}"
-
-  name         = "mysql-ghost-user-pwd"
-  value        = "${module.persistence.user_password}"
-
-  # Adding secrets won't work without "automation" policy
-  depends_on   = [azurerm_key_vault_access_policy.automation]
 }
 
 # -----------------------------------------------------------------------------------------------
 # App Insights
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_application_insights" "ghost" {
-  name                = "ai-${local.shared_name}"
+  name                = "ai-${var.shared_name}"
   location            = "${azurerm_resource_group.ghost.location}"
   resource_group_name = "${azurerm_resource_group.ghost.name}"
 
   application_type    = "web"
 }
 
-# -----------------------------------------------------------------------------------------------
-# Log Analytics Workspace
-# -----------------------------------------------------------------------------------------------
-resource "azurerm_log_analytics_workspace" "ghost" {
-  name                = "la-${local.shared_name}"
-  location            = "${azurerm_resource_group.ghost.location}"
-  resource_group_name = "${azurerm_resource_group.ghost.name}"
-
-  retention_in_days   = 30
-}
 
 # -----------------------------------------------------------------------------------------------
 # Diagnostic settings
 # -----------------------------------------------------------------------------------------------
-resource "azurerm_monitor_diagnostic_setting" "persistence" {
-  name                           = "persistence_metrics"
-  target_resource_id             = module.persistence.server_id
-  log_analytics_workspace_id     = "${azurerm_log_analytics_workspace.ghost.id}"
-  log_analytics_destination_type = "Dedicated"
-
-  metric {
-    category = "AllMetrics"
-    enabled  = true
-
-    retention_policy {
-      enabled = false
-    }
-  }
-}
-
 resource "azurerm_monitor_diagnostic_setting" "servplan" {
   name                           = "serviceplan_metrics"
   target_resource_id             = "${azurerm_app_service_plan.ghost.id}"
-  log_analytics_workspace_id     = "${azurerm_log_analytics_workspace.ghost.id}"
+  log_analytics_workspace_id     = "${var.log_analytics.id}"
   log_analytics_destination_type = "Dedicated"
 
   metric {

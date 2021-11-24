@@ -1,7 +1,6 @@
 # -----------------------------------------------------------------------------------------------
 # REQUIRED PARAMETERS
 # -----------------------------------------------------------------------------------------------
-
 variable "app_name" {
   description = "Name of the application."
   type        = string
@@ -12,46 +11,33 @@ variable "location" {
   type        = string
 }
 
-variable "loc" {
-  description = "Short version of the location variable."
+variable "shared_name" {
+  description = "Common part of name for all components to be created."
   type        = string
 }
 
-variable "org" {
-  description = "Short version of the organization name."
-  type        = string
-}
-
-variable "acr" {
+variable "container_registry" {
   description = "Container registry to get the initial image from."
-  type        = any
+}
+
+variable "db" {
+  description = "DB module to connect as persistence."
+}
+
+variable "key_vault" {
+  description = "Keyvault component to connect as secrets provider."
+}
+
+variable "log_analytics" {
+  description = "Log Analytics workspace component to provide telemetry data."
 }
 
 # -----------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # -----------------------------------------------------------------------------------------------
-
-variable "environment_name" {
-  description = "Name of environment to create for the App."
-  type        = string
-  default     = ""
-}
-
-variable "initial_version" {
+variable "app_version" {
   description = "Version of the app to get from registry."
   type        = string
   default     = ""
-}
-
-# -----------------------------------------------------------------------------------------------
-# LOCAL VARIABLES
-# -----------------------------------------------------------------------------------------------
-
-locals {
-  env           = var.environment_name != "" ? "-${var.environment_name}" : ""
-  shared_name   = "${var.org}-${var.loc}${local.env}-${var.app_name}"
-
-  version       = var.initial_version != "" ? ":${var.initial_version}" : ""
-  initial_image = "${var.acr.login_server}/${var.app_name}${local.version}"
 }
 

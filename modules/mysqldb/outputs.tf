@@ -1,9 +1,5 @@
-output "server_id" {
-  value = "${azurerm_mysql_server.db.id}"
-}
-
 output "server_name" {
-  value = "${azurerm_mysql_server.db.id}"
+  value = "${azurerm_mysql_server.db.name}"
 }
 
 output "server_fqdn" {
@@ -27,21 +23,18 @@ output "database_name" {
 }
 
 output "dba_name" {
-  value = "${var.dba_name}@${azurerm_mysql_server.db.name}"
+  value = "${azurerm_key_vault_secret.dbaname}"
 }
 
 output "dba_password" {
-  value     = "${random_password.dbapwd.result}"
-  sensitive = true
+  value = "${azurerm_key_vault_secret.dbapwd}"
 }
 
 # FIXME A specific user should be created
 output "user_name" {
-  value = "${var.dba_name}@${azurerm_mysql_server.db.name}"
+  value = "${azurerm_key_vault_secret.dbaname}"
 }
 
-# FIXME A specific user should be created
 output "user_password" {
-  value     = "${random_password.dbapwd.result}"
-  sensitive = true
+  value = "${azurerm_key_vault_secret.dbapwd}"
 }

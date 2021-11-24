@@ -1,9 +1,13 @@
 # -----------------------------------------------------------------------------------------------
 # REQUIRED PARAMETERS
 # -----------------------------------------------------------------------------------------------
-
 variable "location" {
   description = "Location to provision the server."
+  type        = string
+}
+
+variable "shared_name" {
+  description = "Common part of name for all components to be created."
   type        = string
 }
 
@@ -22,10 +26,17 @@ variable "db_name" {
   type        = string
 }
 
+variable "key_vault" {
+  description = "Keyvault component to connect as secrets provider."
+}
+
+variable "log_analytics" {
+  description = "Log Analytics workspace for telemetry data and logs."
+}
+
 # -----------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # -----------------------------------------------------------------------------------------------
-
 variable "dba_name" {
   description = "User for the administrator."
   type        = string
