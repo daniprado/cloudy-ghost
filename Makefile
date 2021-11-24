@@ -13,17 +13,17 @@ help: ## This help.
 .DEFAULT_GOAL := help
 
 tf-init: ## Run terraform init to download all necessary plugins
-	docker run --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) init -upgrade=true
+	docker run --rm -v $$PWD:/app -w /app/ -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) init -upgrade=true
 
 tf-plan: ## Exec a terraform plan and puts it on a file called tfplan
-	docker run --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) plan -out=tfplan
+	docker run --rm -v $$PWD:/app -w /app/ -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) plan -out=tfplan
 
 tf-apply: ## Uses tfplan to apply the changes on Azure.
-	docker run --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) apply -auto-approve
+	docker run --rm -v $$PWD:/app -w /app/ -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) apply -auto-approve
 
 tf-destroy: ## Destroy all resources created by the terraform file in this repo.
-	docker run --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) destroy -auto-approve
+	docker run --rm -v $$PWD:/app -w /app/ -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) hashicorp/terraform:$(TERRAFORM_VERSION) destroy -auto-approve
 
 tf-sh: ## terraform console
-	docker run -it --rm -v $$PWD:/app -w /app/ -e ARM_TENANT_ID=$$ARM_TENANT_ID -e ARM_SUBSCRIPTION_ID=$$ARM_SUBSCRIPTION_ID -e ARM_CLIENT_ID=$$ARM_CLIENT_ID -e ARM_CLIENT_SECRET=$$ARM_CLIENT_SECRET -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) --entrypoint "" hashicorp/terraform:$(TERRAFORM_VERSION) sh
+	docker run -it --rm -v $$PWD:/app -w /app/ -e ARM_ACCESS_KEY=$$ARM_ACCESS_KEY -e TF_VAR_APP_VERSION=$(GIT_COMMIT) --entrypoint "" hashicorp/terraform:$(TERRAFORM_VERSION) sh
 

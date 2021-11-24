@@ -1,0 +1,43 @@
+terraform {
+  required_version = "=1.0.10"
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = "=2.86.0"
+    }
+  }
+  backend "azurerm" {
+      # https://github.com/hashicorp/terraform/issues/13022
+      resource_group_name  = "${CICD_RESOURCE_GROUP}"
+      storage_account_name = "${CICD_STORAGE_ACCOUNT}"
+      container_name       = "${CICD_TFSTATE_BLOB}"
+      key                  = "${APP_NAME}.tfstate"
+  }
+}
+
+provider "azurerm" {
+  features {}
+
+  tenant_id           = var.arm_tenant_id
+  subscription_id     = var.arm_subscription_id
+  client_id           = var.arm_client_id
+  client_secret       = var.arm_client_secret
+}
+
+data "azurerm_container_registry" "cicd" {
+  name                = var.cicd_container_registry
+  resource_group_name = var.cicd_resource_group
+}
+
+module "cloudy-ghost" {
+  source          = "./modules/ghost-app"
+
+  app_name        = var.app_name
+  location        = var.primary_location
+  loc             = var.primary_location_abv
+  org             = var.organization_abv
+
+  acr             = data.azurerm_container_registry.cicd
+  initial_version = var.ghost_version
+
+}

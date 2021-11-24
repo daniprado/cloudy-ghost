@@ -3,7 +3,12 @@
 set -e
 
 CURR_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-source ${CURR_PATH}/.envrc
+ENVIRONMENT_FILE="${CURR_PATH}/.envrc"
+
+RANDNESS="$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 7 | head -n 1)"
+sed "s/\${RANDNESS}/${RANDNESS}/g" ${ENVIRONMENT_FILE}.orig > ${ENVIRONMENT_FILE}
+
+source ${ENVIRONMENT_FILE}
 
 AZ_OUT="${CURR_PATH}/az_out"
 mkdir -p ${AZ_OUT}
@@ -42,31 +47,11 @@ docker run --rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
   az logout && \
     echo 'Azure logged out.'"
 
-echo "export ARM_ACCESS_KEY=$(cat ${AZ_OUT}/sto_key)" >> ${CURR_PATH}/.envrc
-echo "Added Storage account access key to local vars."
+./init.sh
 
-envsubst < ${CURR_PATH}/terraform.tfvars.orig > ${CURR_PATH}/terraform.tfvars
-echo "Updated backend parameters in Terraform source."
-
-ACR_USR="$(cat ${AZ_OUT}/acr_usr)"
-ACR_PWD="$(cat ${AZ_OUT}/acr_pwd)"
-ACR_URL="${CICD_CONTAINER_REGISTRY}.azurecr.io"
-docker login ${ACR_URL} --username ${ACR_USR} --password-stdin <<EOF
-${ACR_PWD}
-EOF
-echo "Docker logged in."
-
-GHOST_IMAGE_ORIG="ghost:${GHOST_VERSION}"
-GHOST_IMAGE_DEST="${ACR_URL}/${GHOST_IMAGE_ORIG}"
-docker pull ${GHOST_IMAGE_ORIG}
-docker tag  ${GHOST_IMAGE_ORIG} ${GHOST_IMAGE_DEST}
-docker push ${GHOST_IMAGE_DEST}
-echo "Ghost image pushed to registry."
-
-docker logout ${ACR_URL}
-echo "Docker logged out."
-
-rm -rf ${AZ_OUT}
+if [[ -d ${AZ_OUT} ]]; then
+  rm -rf ${AZ_OUT}
+fi
 
 exit 0
 
