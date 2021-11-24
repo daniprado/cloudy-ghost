@@ -11,6 +11,9 @@ AZ_OUT="${CURR_PATH}/az_out"
 if [[ ! -d ${AZ_OUT} ]]; then
   mkdir -p ${AZ_OUT}
 
+  # -------------------------------------------------------------------------------------------------
+  # CICD (pre-existent) components details extraction
+  # -------------------------------------------------------------------------------------------------
   # Storage Account "wait" workaround: https://github.com/Azure/azure-cli/issues/1528#issuecomment-720750332
   docker run --rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
     az login --service-principal --tenant ${ARM_TENANT_ID} --username ${ARM_CLIENT_ID} \
@@ -31,10 +34,16 @@ fi
 echo "export ARM_ACCESS_KEY=$(cat ${AZ_OUT}/sto_key)" >> ${ENVIRONMENT_FILE}
 echo "Added Storage account access key to local vars."
 
+# -------------------------------------------------------------------------------------------------
+# Replacement of environment variables inside *.orig files to finalize Terraform environment setup
+# -------------------------------------------------------------------------------------------------
 envsubst < ${CURR_PATH}/terraform.tfvars.orig > ${CURR_PATH}/terraform.tfvars
 envsubst < ${CURR_PATH}/main.tf.orig > ${CURR_PATH}/main.tf
 echo "Updated backend parameters in Terraform source."
 
+# -------------------------------------------------------------------------------------------------
+# Uploading of the initial Ghost image version to CICD ACR
+# -------------------------------------------------------------------------------------------------
 ACR_USR="$(cat ${AZ_OUT}/acr_usr)"
 ACR_PWD="$(cat ${AZ_OUT}/acr_pwd)"
 ACR_URL="${CICD_CONTAINER_REGISTRY}.azurecr.io"

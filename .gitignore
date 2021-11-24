@@ -8,4 +8,4 @@ tfplan
 .envrc
 
 # I know...
-main.tf
+/main.tf

@@ -13,6 +13,9 @@ source ${ENVIRONMENT_FILE}
 AZ_OUT="${CURR_PATH}/az_out"
 mkdir -p ${AZ_OUT}
 
+# -------------------------------------------------------------------------------------------------
+# CICD (pre-existent?) components creation
+# -------------------------------------------------------------------------------------------------
 # Storage Account "wait" workaround: https://github.com/Azure/azure-cli/issues/1528#issuecomment-720750332
 docker run --rm -v ${AZ_OUT}:/out mcr.microsoft.com/azure-cli /bin/bash -c "\
   az login --service-principal --tenant ${ARM_TENANT_ID} --username ${ARM_CLIENT_ID} \
