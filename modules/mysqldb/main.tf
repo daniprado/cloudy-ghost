@@ -22,13 +22,17 @@ resource "azurerm_mysql_server" "db" {
 
   sku_name                     = "${var.sku}"
   storage_mb                   = "${var.storage}"
-  version                      = "8.0"
+  version                      = "5.7"
   ssl_enforcement_enabled      = true
 }
 
 resource "random_password" "dbapwd" {
-  length  = 17
-  special = false
+  length      = 17
+  special     = false
+  number      = true
+  min_lower   = 1
+  min_upper   = 1
+  min_numeric = 1
 }
 
 # -----------------------------------------------------------------------------------------------
