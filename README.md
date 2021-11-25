@@ -34,14 +34,15 @@ The current repository contains my deployment PoC of [Ghost](https://ghost.org) 
    ./pre_init.sh
    ```
 
-3. At this point it is time to start executing Terraform commands from the command line. We have two options.
-   - Using Make (via the `Makefile` present). This way we deploy all components:
+3. At this point we load the environment variables contained in `.envrc` file into our command line session and deploy all components using Terraform. We have two options:
+   - Using Make (via the `Makefile` present).
      ```
+     source .envrc
      make tf-init
      make tf-apply
      ```
      (type `make help` for a list and explanation on all commands inside `Makefile`)
-   - Using Terraform CLI. In this case we have to start by loading the environment variables contained in `.envrc` file. Then we deploy all components:
+   - Using Terraform CLI.
      ```
      source .envrc
      terraform init
