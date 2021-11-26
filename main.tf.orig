@@ -59,6 +59,7 @@ module "secondary_cloudy_ghost" {
   location           = var.secondary_location
   shared_name        = local.secondary_shared_name
 
+  app_image          = var.ghost_image
   app_version        = var.ghost_version
 
   container_registry = data.azurerm_container_registry.cicd
