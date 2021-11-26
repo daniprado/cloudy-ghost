@@ -35,9 +35,15 @@ variable "log_analytics" {
 # -----------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # -----------------------------------------------------------------------------------------------
+variable "app_image" {
+  description = "Docker image of the app to get from registry."
+  type        = string
+  default     = "ghost"
+}
+
 variable "app_version" {
   description = "Version of the app to get from registry."
   type        = string
-  default     = ""
+  default     = "latest"
 }
 

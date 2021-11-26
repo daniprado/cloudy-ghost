@@ -43,8 +43,7 @@ locals {
   db_user             = "${var.key_vault.vault_uri}secrets/${var.db.user_name.name}/${var.db.user_name.version}"
   db_pwd              = "${var.key_vault.vault_uri}secrets/${var.db.user_password.name}/${var.db.user_password.version}"
 
-  version             = var.app_version != "" ? ":${var.app_version}" : ""
-  app_image           = "${var.container_registry.login_server}/${var.app_name}${local.version}"
+  app_image           = "${var.container_registry.login_server}/${var.app_image}:${var.app_version}"
 }
 
 resource "azurerm_app_service" "ghost" {

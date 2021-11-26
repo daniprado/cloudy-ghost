@@ -9,6 +9,11 @@ variable "arm_client_secret" {}
 # -----------------------------------------------------------------------------------------------
 # Deployment customization
 # -----------------------------------------------------------------------------------------------
+variable "ghost_image" {
+  description = "Ghost app. docker image name. Must be accessible through the defined ACR."
+  type        = string
+}
+
 variable "ghost_version" {
   description = "Ghost app. docker image version. Must be accessible through the defined ACR."
   type        = string
