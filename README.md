@@ -37,7 +37,6 @@ The current repository contains my deployment PoC of [Ghost](https://ghost.org) 
 3. At this point we load the environment variables contained in `.envrc` file into our command line session and deploy all components using Terraform. We have two options:
    - Using Make (via the `Makefile` present).
      ```
-     source .envrc
      make tf-init
      make tf-apply
      ```
