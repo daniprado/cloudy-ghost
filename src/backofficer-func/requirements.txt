@@ -1,0 +1,5 @@
+applicationinsights
+azure-functions
+opencensus-ext-azure
+requests
+pyjwt

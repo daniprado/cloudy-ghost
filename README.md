@@ -126,6 +126,9 @@ This defines the releasing process for the application (with zero downtime) and 
 
 The missing requirements at this point are the serverless function to remove data from the system (solved by an HTTP triggered `Function App`) and defining RBAC policies for the different teams involved (i.e. giving *Contributor* access to the developers in the "non-PROD" *subscription* only).
 
+An initial (**untested**) version of the *Function App* has been included under `src/backofficer-func` path. This folder contains all needed files to create a Docker image deployable into a Function App for Containers component.  We should be able to execute the endpoint "/clean_all" of the App to remove all the posts in the system (we need a function key to authenticate our request).
+The function's code reads from the config parameters (present in the component) the environment variables it needs to be executed (including an API Key for the Ghost application, that should be stored into our *Keyvault*). After that, gets all the posts in the system (via Ghost's admin API) and delete them one by one. This is based on two assumptions: the admin API does not accept to remove all in a single call (I understood so from the documentation, but I did not test it...) and the total amount of posts is not too big (some number in the hundreds will never take too long to delete).
+
 ## Author
 
 Daniel Prado dpradom@argallar.com
