@@ -14,7 +14,7 @@ data "azurerm_client_config" "current" {}
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_resource_group" "ghost" {
   name     = "rg-${var.shared_name}"
-  location = "${var.location}"
+  location = var.location
 }
 
 # -----------------------------------------------------------------------------------------------
@@ -22,8 +22,8 @@ resource "azurerm_resource_group" "ghost" {
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_app_service_plan" "ghost" {
   name                = "asp-${var.shared_name}"
-  location            = "${azurerm_resource_group.ghost.location}"
-  resource_group_name = "${azurerm_resource_group.ghost.name}"
+  location            = azurerm_resource_group.ghost.location
+  resource_group_name = azurerm_resource_group.ghost.name
 
   kind                = "Linux"
   reserved            = true
@@ -47,10 +47,10 @@ locals {
 }
 
 resource "azurerm_app_service" "ghost" {
-  name                = "${local.app_component_name}"
-  location            = "${azurerm_resource_group.ghost.location}"
-  resource_group_name = "${azurerm_resource_group.ghost.name}"
-  app_service_plan_id = "${azurerm_app_service_plan.ghost.id}"
+  name                = local.app_component_name
+  location            = azurerm_resource_group.ghost.location
+  resource_group_name = azurerm_resource_group.ghost.name
+  app_service_plan_id = azurerm_app_service_plan.ghost.id
 
   https_only          = true
 
@@ -77,20 +77,20 @@ resource "azurerm_app_service" "ghost" {
 
   app_settings = {
     # Ghost params
-    "database__client"                                = "${var.db.server_type}"
-    "database__connection__host"                      = "${var.db.server_fqdn}"
-    "database__connection__database"                  = "${var.db.database_name}"
+    "database__client"                                = var.db.server_type
+    "database__connection__host"                      = var.db.server_fqdn
+    "database__connection__database"                  = var.db.database_name
     "database__connection__user"                      = "@Microsoft.KeyVault(SecretUri=${local.db_user})"
     "database__connection__password"                  = "@Microsoft.KeyVault(SecretUri=${local.db_pwd})"
-    "database__connection__port"                      = "${var.db.server_port}"
-    "database__connection__ssl"                       = "${var.db.server_ssl}"
-    "url"                                             = "https://${local.app_component_name}.azurewebsites.net"
+    "database__connection__port"                      = var.db.server_port
+    "database__connection__ssl"                       = var.db.server_ssl
+    "url"                                             = "https://fd-demo-global-nocorpo.azurefd.net"
 
     "WEBSITES_ENABLE_APP_SERVICE_STORAGE"             = "false"
 
     # Application insights...
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = "${azurerm_application_insights.ghost.instrumentation_key}"
-    "APPLICATIONINSIGHTS_CONNECTION_STRING"           = "${azurerm_application_insights.ghost.connection_string}"
+    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.ghost.instrumentation_key
+    "APPLICATIONINSIGHTS_CONNECTION_STRING"           = azurerm_application_insights.ghost.connection_string
     "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "1.0.0"
     "APPINSIGHTS_SNAPSHOTFEATURE_VERSION"             = "1.0.0"
     "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT"       = ""
@@ -105,8 +105,8 @@ resource "azurerm_app_service" "ghost" {
 }
 
 resource "azurerm_role_assignment" "appserv" {
-  principal_id         = "${azurerm_app_service.ghost.identity.0.principal_id}"
-  scope                = "${var.container_registry.id}"
+  principal_id         = azurerm_app_service.ghost.identity.0.principal_id
+  scope                = var.container_registry.id
   role_definition_name = "acrpull"
 }
 
@@ -114,10 +114,10 @@ resource "azurerm_role_assignment" "appserv" {
 # KeyVault access policies
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_key_vault_access_policy" "appserv" {
-  key_vault_id       = "${var.key_vault.id}"
-  tenant_id          = "${data.azurerm_client_config.current.tenant_id}"
+  key_vault_id       = var.key_vault.id
+  tenant_id          = data.azurerm_client_config.current.tenant_id
 
-  object_id          = "${azurerm_app_service.ghost.identity.0.principal_id}"
+  object_id          = azurerm_app_service.ghost.identity.0.principal_id
 
   secret_permissions = [
     "Get",
@@ -129,8 +129,8 @@ resource "azurerm_key_vault_access_policy" "appserv" {
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_application_insights" "ghost" {
   name                = "ai-${var.shared_name}"
-  location            = "${azurerm_resource_group.ghost.location}"
-  resource_group_name = "${azurerm_resource_group.ghost.name}"
+  location            = azurerm_resource_group.ghost.location
+  resource_group_name = azurerm_resource_group.ghost.name
 
   application_type    = "web"
 }
@@ -141,8 +141,8 @@ resource "azurerm_application_insights" "ghost" {
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_monitor_diagnostic_setting" "servplan" {
   name                           = "serviceplan_metrics"
-  target_resource_id             = "${azurerm_app_service_plan.ghost.id}"
-  log_analytics_workspace_id     = "${var.log_analytics.id}"
+  target_resource_id             = azurerm_app_service_plan.ghost.id
+  log_analytics_workspace_id     = var.log_analytics.id
   log_analytics_destination_type = "Dedicated"
 
   metric {
@@ -160,9 +160,9 @@ resource "azurerm_monitor_diagnostic_setting" "servplan" {
 # -----------------------------------------------------------------------------------------------
 resource "azurerm_monitor_autoscale_setting" "servplan" {
   name                = "http_queue_length"
-  location            = "${azurerm_resource_group.ghost.location}"
-  resource_group_name = "${azurerm_resource_group.ghost.name}"
-  target_resource_id  = "${azurerm_app_service_plan.ghost.id}"
+  location            = azurerm_resource_group.ghost.location
+  resource_group_name = azurerm_resource_group.ghost.name
+  target_resource_id  = azurerm_app_service_plan.ghost.id
 
   profile {
     name = "defaultProfile"
@@ -176,7 +176,7 @@ resource "azurerm_monitor_autoscale_setting" "servplan" {
     rule {
       metric_trigger {
         metric_name              = "HttpQueueLength"
-        metric_resource_id       = "${azurerm_app_service_plan.ghost.id}"
+        metric_resource_id       = azurerm_app_service_plan.ghost.id
         time_grain               = "PT1M"
         statistic                = "Average"
         time_window              = "PT5M"
@@ -197,7 +197,7 @@ resource "azurerm_monitor_autoscale_setting" "servplan" {
     rule {
       metric_trigger {
         metric_name              = "HttpQueueLength"
-        metric_resource_id       = "${azurerm_app_service_plan.ghost.id}"
+        metric_resource_id       = azurerm_app_service_plan.ghost.id
         time_grain               = "PT1M"
         statistic                = "Average"
         time_window              = "PT5M"

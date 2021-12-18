@@ -5,6 +5,7 @@ export ARM_SUBSCRIPTION_ID=
 export ARM_CLIENT_ID=
 export ARM_CLIENT_SECRET=
 
+export GHOST_IMAGE=ghost
 export GHOST_VERSION=4.22.3
 export TERRAFORM_VERSION=1.0.10
 
